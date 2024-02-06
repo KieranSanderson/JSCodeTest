@@ -1,3 +1,4 @@
 **/node_modules
 **/**/*.log
 DB
+node_modules
