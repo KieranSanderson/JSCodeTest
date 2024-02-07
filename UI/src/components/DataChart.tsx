@@ -16,6 +16,12 @@ interface ChartDataInput {
     chartName: string,
 }
 
+const colourMap = {
+    [DataType.EUR]: 'rgb(75, 192, 192)',
+    [DataType.USD]: 'rgb(80, 201, 92)',
+    [DataType.TKL]: 'rgb(120, 88, 80)',
+}
+
 const useTransformData = (data: any[], activeQuery: QueryType) => {
     const [ chartData, setChartData ] = useState<any>({ labels: [], datasets: [] })
     const [ labels, setLabels ] = useState<string[]>()
@@ -38,7 +44,6 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
                 return acc
             }, {seriesData: {}, labelData: {}, chartKeys: new Set<DataType>() }
         ) as ChartDataInput
-        console.log({tr_series})
         const dataSets = Array.from(tr_chartKeys).map(key => {
             // tr_label into datapoints
             setLabels(new Array(tr_series[key]?.length).fill('test'))
@@ -51,14 +56,15 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
               }
         })
         setDatasets(dataSets)
-        
     }, [data, activeQuery])
     
     return { chartData }
 }
+
 export const DataChart: FC = () => {
-    const [ chartDiv, setChartDiv ] = useState<ChartItem | null>(null);
+    const [ chartDiv, setChartDiv ] = useState<HTMLCanvasElement | null>(null);
 	// Data req
+    const [ chartRendered, setChartRendered ] = useState<boolean>(false)
     const [ parameters, setParameters ] = useState<any>({ names: ['EUR'] })
     const [ activeQuery, setActiveQuery ] = useState<QueryType>(QueryType.GET_DB_DATA)
     const fetchData = useMemo(() => getData(activeQuery, parameters),[activeQuery, parameters])
@@ -67,15 +73,21 @@ export const DataChart: FC = () => {
 
     const { chartData } = useTransformData(data, activeQuery)
 
+
+
     useEffect(() => {
         // reset parameters
         setParameters({})
     }, [activeQuery])
 
-    console.log({data, error, isLoading})
-
     useEffect(() => {
-        setChartDiv(document.getElementById('data_chart') as ChartItem)
+        if (!chartDiv) setChartDiv(document.getElementById('data_chart') as HTMLCanvasElement)
+
+        const dataChart = document.getElementById('data_chart') as HTMLCanvasElement
+        if (chartRendered) {
+            Chart.getChart(chartDiv).destroy()
+            setChartRendered(false)
+        }
 
         if (chartDiv) {
             console.log('render chart')
@@ -83,9 +95,17 @@ export const DataChart: FC = () => {
                 chartDiv,
                 { type: 'line', data: chartData }
             )
+            setChartRendered(true)
         }
     }, [chartData, chartDiv])
 
     if (isLoading) return <div>loading</div>
-    return <canvas id="data_chart" />
+    return <div className='flex grid-cols-2 bg-red-500'>
+        <div className=' col-span-1'>
+            <button className="text-right w-16">test</button>
+        </div>
+        <div  className=' col-span-1'>
+            <canvas onClick={(event) => event.preventDefault()} id="data_chart" />
+        </div>
+    </div>
 }

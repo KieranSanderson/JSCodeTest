@@ -10,7 +10,6 @@ const paramsToURL = (parameters: any) => {
 
 export const getData = (endpoint: QueryType, parameters: any) => async () => {
     const urlParams = paramsToURL(parameters)
-    console.log({url:`http://localhost:8001/api/${endpoint}${urlParams ? '?' : ''}${urlParams}` })
     const res = await fetch(`http://localhost:8001/api/${endpoint}${urlParams ? '?' : ''}${urlParams}`)
     return res.json()
 }

@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,18 +12,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initialise = void 0;
-const mongoose = __importStar(require("mongoose"));
+exports.getData = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const EnvVars_1 = __importDefault(require("@src/types/EnvVars"));
-const initialise = () => __awaiter(void 0, void 0, void 0, function* () {
-    const conversionSchema = new mongoose.Schema({
-        _id: mongoose.Schema.ObjectId,
-        date: String,
-        name: String,
-        hourlyData: [Number],
-    });
-    const client = yield mongoose.connect(EnvVars_1.default.MongoUri.toString());
-    const model = client.model('CurrencyConversion', conversionSchema);
-    return model;
+const jet_logger_1 = __importDefault(require("jet-logger"));
+mongoose_1.default.connect(EnvVars_1.default.MongoUri.toString());
+jet_logger_1.default.info(`Connection set up to: ${EnvVars_1.default.MongoUri}`);
+const conversion = new mongoose_1.default.Schema({
+    _id: { type: mongoose_1.default.Types.ObjectId },
+    date: { type: String },
+    name: { type: String },
+    hourlyData: [{ type: Number }],
+}, { collection: 'ConversionRates' });
+const conversionData = mongoose_1.default.model('ConversionRates', conversion);
+const buildFilter = ({ names, startDate, endDate }) => __awaiter(void 0, void 0, void 0, function* () {
+    var filter = {};
+    if (names)
+        filter.name = names;
+    if (startDate)
+        filter.startDate = { $gt: startDate };
+    if (startDate)
+        filter.endDate = { $lt: endDate };
+    return filter;
 });
-exports.initialise = initialise;
+const getData = ({ names, startDate, endDate }) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const filter = yield buildFilter({ names, startDate, endDate });
+        const data = yield conversionData.find(filter).exec();
+        return data;
+    }
+    catch (err) {
+        jet_logger_1.default.err(err);
+        return 'error occured';
+    }
+});
+exports.getData = getData;
