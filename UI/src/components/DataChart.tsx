@@ -68,12 +68,11 @@ const toggleKey = (key: DataType, activeDataKeys: DataType[], setActiveDataKeys:
     if (keys.includes(key)) {
         keys.splice(keys.indexOf(key),1)
         setActiveDataKeys(keys)
-        console.log({keys})
     }
     else {
-        setActiveDataKeys([...keys, key].sort((a,b) => a.localeCompare(b)))
-        console.log({keys})
+        keys = [...keys, key].sort((a,b) => a.localeCompare(b))
     }
+    setActiveDataKeys(keys)
 }
 
 export const DataChart: FC = () => {
@@ -92,10 +91,9 @@ export const DataChart: FC = () => {
         DataType.USD,
     ])
 
-    console.log({dataKeys, activeDataKeys})
     const fetchData = useMemo(() => getData(activeQuery, activeDataKeys),[activeQuery, activeDataKeys])
 
-    const { data, error, isLoading } = useQuery([activeQuery, fetchData], fetchData)
+    const { data, error, isLoading } = useQuery(activeQuery, fetchData)
 
     const { chartData } = useTransformData(data, activeQuery)
 
@@ -120,6 +118,10 @@ export const DataChart: FC = () => {
             setChartRendered(true)
         }
     }, [chartData, chartDiv])
+
+    useEffect(() => {
+        console.log({activeDataKeys})
+    }, [activeDataKeys, dataKeys])
 
     if (isLoading) return <div className=''>loading</div>
     return <div className='flex flex-col items-center justify-center' style={{paddingTop: 100}}>

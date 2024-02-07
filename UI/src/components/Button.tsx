@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 
 interface ButtonProps {
     title: string
@@ -7,9 +7,14 @@ interface ButtonProps {
 }
 
 const Button: FC<ButtonProps> = ({title, active, onClickFunc}) => {
+    const [ isActive, setIsActive ] = useState<boolean>(active);
+    useEffect(() => {
+        setIsActive(active)
+    }, [active])
+
     console.log({title, active})
     return <button onClick={onClickFunc} style={{
-        background: (active) ? 'lightblue' : 'white',
+        background: (isActive) ? 'lightblue' : 'white',
         paddingTop: 10,
         paddingBottom: 10,
         paddingRight: 20,
