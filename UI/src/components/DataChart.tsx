@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState, useMemo } from 'react'
-import Chart, { ChartItem } from 'chart.js/auto'
+import Chart from 'chart.js/auto'
 import { useQuery } from 'react-query'
 import { DataType, QueryType } from '../types/api'
 import { getData } from '../tools/queries/getData'
@@ -27,7 +27,6 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
     const [ chartData, setChartData ] = useState<any>({ labels: [], datasets: [] })
     const [ labels, setLabels ] = useState<string[]>()
     const [ datasets, setDatasets ] = useState<any[]>()
-    const [ dataKeys, setDataKeys ] = useState<string[]>([])
 
     useEffect(() => setChartData({ labels, datasets }), [labels, datasets])
 
@@ -47,7 +46,6 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
             }, {seriesData: {}, labelData: {}, chartKeys: new Set<DataType>() }
         ) as ChartDataInput
         const dkys = Array.from(tr_chartKeys);
-        setDataKeys(dkys)
         const dataSets = dkys.map(key => {
             // tr_label into datapoints
             setLabels(new Array(tr_series[key]?.length).fill('test'))
@@ -65,22 +63,41 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
     return { chartData }
 }
 
+const toggleKey = (key: DataType, activeDataKeys: DataType[], setActiveDataKeys: Function) => {
+    let keys = activeDataKeys;
+    if (keys.includes(key)) {
+        keys.splice(keys.indexOf(key),1)
+        setActiveDataKeys(keys)
+        console.log({keys})
+    }
+    else {
+        setActiveDataKeys([...keys, key].sort((a,b) => a.localeCompare(b)))
+        console.log({keys})
+    }
+}
+
 export const DataChart: FC = () => {
     const [ chartDiv, setChartDiv ] = useState<HTMLCanvasElement | null>(null);
 	// Data req
     const [ chartRendered, setChartRendered ] = useState<boolean>(false)
-    const [ parameters, setParameters ] = useState<any>({ names: ['EUR'] })
     const [ activeQuery, setActiveQuery ] = useState<QueryType>(QueryType.GET_DB_DATA)
-    const fetchData = useMemo(() => getData(activeQuery, parameters),[activeQuery, parameters])
+    const [ dataKeys, setDataKeys ] = useState<DataType[]>([
+        DataType.EUR,
+        DataType.TKL,
+        DataType.USD,
+    ])
+    const [ activeDataKeys, setActiveDataKeys ] = useState<DataType[]>([
+        DataType.EUR,
+        DataType.TKL,
+        DataType.USD,
+    ])
 
-	const { data, error, isLoading } = useQuery(activeQuery, fetchData)
+    console.log({dataKeys, activeDataKeys})
+    const fetchData = useMemo(() => getData(activeQuery, activeDataKeys),[activeQuery, activeDataKeys])
+
+    const { data, error, isLoading } = useQuery([activeQuery, fetchData], fetchData)
 
     const { chartData } = useTransformData(data, activeQuery)
-
-    useEffect(() => {
-        // reset parameters
-        setParameters({})
-    }, [activeQuery])
 
     useEffect(() => {
         if (!chartDiv) setChartDiv(document.getElementById('data_chart') as HTMLCanvasElement)
@@ -105,12 +122,20 @@ export const DataChart: FC = () => {
     }, [chartData, chartDiv])
 
     if (isLoading) return <div className=''>loading</div>
-    return <div className='flex flex-col items-center justify-center h-5/6 w-5/6'>
+    return <div className='flex flex-col items-center justify-center' style={{paddingTop: 100}}>
         <div className='grid grid-cols-1 grid-rows-3 gap-4 content-center' style={{
             marginRight: '30px'
         }}>
-        
-            <Button title="test" />
+        {dataKeys.map(key => 
+            <Button 
+                title={key}
+                key={key}
+                active={activeDataKeys.includes(key)}
+                onClickFunc={() => {
+                    toggleKey(key, activeDataKeys, setActiveDataKeys)
+                }
+            } />    
+        )}
         </div>
         <div className='flex-shrink-0 bg-slate-50 rounded-lg' style={{
             background: '#FFFFFF',
