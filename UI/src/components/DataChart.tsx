@@ -4,6 +4,7 @@ import { useQuery } from 'react-query'
 import { DataType, QueryType } from '../types/api'
 import { getData } from '../tools/queries/getData'
 import _ from 'lodash'
+import Button from './Button'
 
 interface ChartDataInput {
     seriesData: {
@@ -26,6 +27,7 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
     const [ chartData, setChartData ] = useState<any>({ labels: [], datasets: [] })
     const [ labels, setLabels ] = useState<string[]>()
     const [ datasets, setDatasets ] = useState<any[]>()
+    const [ dataKeys, setDataKeys ] = useState<string[]>([])
 
     useEffect(() => setChartData({ labels, datasets }), [labels, datasets])
 
@@ -44,7 +46,9 @@ const useTransformData = (data: any[], activeQuery: QueryType) => {
                 return acc
             }, {seriesData: {}, labelData: {}, chartKeys: new Set<DataType>() }
         ) as ChartDataInput
-        const dataSets = Array.from(tr_chartKeys).map(key => {
+        const dkys = Array.from(tr_chartKeys);
+        setDataKeys(dkys)
+        const dataSets = dkys.map(key => {
             // tr_label into datapoints
             setLabels(new Array(tr_series[key]?.length).fill('test'))
             return {
@@ -73,8 +77,6 @@ export const DataChart: FC = () => {
 
     const { chartData } = useTransformData(data, activeQuery)
 
-
-
     useEffect(() => {
         // reset parameters
         setParameters({})
@@ -83,28 +85,40 @@ export const DataChart: FC = () => {
     useEffect(() => {
         if (!chartDiv) setChartDiv(document.getElementById('data_chart') as HTMLCanvasElement)
 
-        const dataChart = document.getElementById('data_chart') as HTMLCanvasElement
         if (chartRendered) {
             Chart.getChart(chartDiv).destroy()
             setChartRendered(false)
         }
 
         if (chartDiv) {
-            console.log('render chart')
             new Chart(
                 chartDiv,
-                { type: 'line', data: chartData }
+                { type: 'line', data: chartData, options: {
+                    responsive: true,
+                    aspectRatio: 1,
+                    maintainAspectRatio: false
+                  }
+                }
             )
             setChartRendered(true)
         }
     }, [chartData, chartDiv])
 
-    if (isLoading) return <div>loading</div>
-    return <div className='flex grid-cols-2 bg-red-500'>
-        <div className=' col-span-1'>
-            <button className="text-right w-16">test</button>
+    if (isLoading) return <div className=''>loading</div>
+    return <div className='flex flex-col items-center justify-center h-5/6 w-5/6'>
+        <div className='grid grid-cols-1 grid-rows-3 gap-4 content-center' style={{
+            marginRight: '30px'
+        }}>
+        
+            <Button title="test" />
         </div>
-        <div  className=' col-span-1'>
+        <div className='flex-shrink-0 bg-slate-50 rounded-lg' style={{
+            background: '#FFFFFF',
+            padding: 20,
+            borderRadius: 10,
+            border: '1px black solid',
+            widows: '600px'
+        }}>
             <canvas onClick={(event) => event.preventDefault()} id="data_chart" />
         </div>
     </div>
